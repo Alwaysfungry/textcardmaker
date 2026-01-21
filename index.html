@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Text Card Maker V1.4</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;family=Noto+Serif+SC:wght@300;400;500;600&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --cream-bg: #F5F0E8; --cream-text: #2C2C2C;
+            --midnight-bg: #1A1A2E; --midnight-text: #E8E8E8;
+            --forest-bg: #2D3B2D; --forest-text: #E8EDE8;
+            --ocean-bg: #1E3A4C; --ocean-text: #E8F0F0;
+            --blush-bg: #F8F0F0; --blush-text: #3C2C2C;
+            --mono-bg: #FFFFFF; --mono-text: #1A1A1A;
+            
+            --ui-bg: #f8fafc; --ui-surface: #ffffff; --ui-border: #e2e8f0;
+            --ui-text: #1e293b; --ui-muted: #64748b; --ui-accent: #0f172a;
+            --radius-md: 12px;
+        }
+
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--ui-bg); color: var(--ui-text); min-height: 100vh; }
+
+        .app-container { display: grid; grid-template-columns: 400px 1fr; min-height: 100vh; }
+
+        .controls-section { 
+            background: var(--ui-surface); 
+            border-right: 1px solid var(--ui-border); 
+            padding: 32px; 
+            overflow-y: auto; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 10; 
+        }
+
+        .preview-section { background: #eef1f5; display: flex; align-items: center; justify-content: center; padding: 40px; height: 100vh; position: sticky; top: 0; overflow: hidden; }
+
+        .card-wrapper { width: 100%; max-width: 450px; max-height: 90vh; aspect-ratio: 3/4; }
+
+        .card { 
+            width: 100%; height: 100%; background: white; padding: 12.5%; 
+            display: flex; flex-direction: column; position: relative; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .card.layout-classic { justify-content: center; text-align: left; }
+        .card.layout-zen { justify-content: center; text-align: center; }
+        .card.layout-editorial { justify-content: center; text-align: left; }
+
+        .editorial-line-top, .editorial-line-bottom { position: absolute; left: 8%; right: 8%; height: 1px; background-color: currentColor; opacity: 0.2; display: none; }
+        .editorial-line-top { top: 12%; }
+        .editorial-line-bottom { bottom: 12%; }
+        .editorial-text-top, .editorial-text-bottom { position: absolute; font-family: 'Inter', sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.4; display: none; }
+        .editorial-text-top { top: 8%; left: 8%; }
+        .editorial-text-bottom { bottom: 8%; right: 8%; }
+        .card.layout-editorial :is(.editorial-line-top, .editorial-line-bottom, .editorial-text-top, .editorial-text-bottom) { display: block; }
+
+        #displayContent { transition: transform 0.2s ease-out; transform-origin: center; width: 100%; }
+        .en-text-display { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 24px; line-height: 1.4; margin-bottom: 24px; word-wrap: break-word; }
+        .zh-text-display { font-family: 'Noto Serif SC', "PingFang SC", "Microsoft YaHei", serif; font-size: 18px; font-weight: 300; line-height: 2.0; letter-spacing: 0.08em; white-space: pre-wrap; }
+        .empty-line { height: 24px; }
+
+        .card.theme-cream { background: var(--cream-bg); color: var(--cream-text); }
+        .card.theme-midnight { background: var(--midnight-bg); color: var(--midnight-text); }
+        .card.theme-forest { background: var(--forest-bg); color: var(--forest-text); }
+        .card.theme-ocean { background: var(--ocean-bg); color: var(--ocean-text); }
+        .card.theme-blush { background: var(--blush-bg); color: var(--blush-text); }
+        .card.theme-mono { background: var(--mono-bg); color: var(--mono-text); border: 1px solid #e5e5e5; }
+
+        .app-header { margin-bottom: 32px; }
+        .app-title { font-size: 24px; font-weight: 700; color: var(--ui-accent); letter-spacing: -0.5px; }
+        
+        .input-wrapper { position: relative; margin-bottom: 32px; }
+        textarea { 
+            width: 100%; padding: 16px; border: 2px solid var(--ui-border); border-radius: var(--radius-md); 
+            font-size: 15px; min-height: 160px; resize: vertical; background: #FAFAFA; transition: border-color 0.2s;
+        }
+        textarea:focus { outline: none; border-color: var(--ui-accent); background: #FFF; }
+        .char-count { position: absolute; bottom: 12px; right: 16px; font-size: 11px; color: var(--ui-muted); background: rgba(255,255,255,0.9); padding: 2px 6px; border-radius: 4px; }
+
+        .control-group { margin-bottom: 32px; }
+        .group-label { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--ui-muted); margin-bottom: 12px; letter-spacing: 0.05em; }
+        
+        .theme-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+        .theme-btn { aspect-ratio: 1; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
+        .theme-btn:hover { transform: scale(1.1); }
+        .theme-btn.active { box-shadow: 0 0 0 2px var(--ui-surface), 0 0 0 4px var(--ui-accent); }
+        
+        .bg-cream { background: var(--cream-bg); } .bg-midnight { background: var(--midnight-bg); } .bg-forest { background: var(--forest-bg); } .bg-ocean { background: var(--ocean-bg); } .bg-blush { background: var(--blush-bg); } .bg-mono { background: var(--mono-bg); border: 1px solid #ddd; }
+        
+        .tabs-container { display: flex; background: var(--ui-bg); padding: 4px; border-radius: var(--radius-md); gap: 4px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--ui-muted); transition: all 0.2s; }
+        .tab-btn.active { background: var(--ui-surface); color: var(--ui-accent); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        
+        .export-btn { 
+            width: 100%; padding: 16px; margin-top: auto; 
+            background: var(--ui-accent); color: white; border: none; border-radius: var(--radius-md); 
+            font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; 
+            transition: opacity 0.2s; 
+        }
+        .export-btn:hover { opacity: 0.9; }
+
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #10B981; color: white; padding: 12px 24px; border-radius: 50px; opacity: 0; transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 999; pointer-events: none;}
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #exportCanvas { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="controls-section">
+        <div class="app-header"><h1 class="app-title">Text Card Maker</h1></div>
+
+        <div class="input-wrapper">
+            <textarea id="quoteAll" maxlength="400" placeholder="Type or paste your text here..."></textarea>
+            <div class="char-count" id="allCount">0/400</div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-label">Theme</div>
+            <div class="theme-grid">
+                <div class="theme-btn bg-cream active" data-theme="cream"></div>
+                <div class="theme-btn bg-midnight" data-theme="midnight"></div>
+                <div class="theme-btn bg-forest" data-theme="forest"></div>
+                <div class="theme-btn bg-ocean" data-theme="ocean"></div>
+                <div class="theme-btn bg-blush" data-theme="blush"></div>
+                <div class="theme-btn bg-mono" data-theme="mono"></div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-label">Layout</div>
+            <div class="tabs-container">
+                <button class="tab-btn active" data-layout="classic">Classic</button>
+                <button class="tab-btn" data-layout="zen">Zen</button>
+                <button class="tab-btn" data-layout="editorial">Editorial</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-label">Size</div>
+            <div class="tabs-container">
+                <button class="size-btn tab-btn active" data-size="3:4" data-w="1080" data-h="1440">Portrait</button>
+                <button class="size-btn tab-btn" data-size="1:1" data-w="1080" data-h="1080">Square</button>
+                <button class="size-btn tab-btn" data-size="9:16" data-w="1080" data-h="1920">Story</button>
+            </div>
+        </div>
+
+        <button class="export-btn" id="exportBtn">Download Image</button>
+    </div>
+
+    <div class="preview-section">
+        <div class="card-wrapper" id="cardWrapper">
+            <div class="card theme-cream layout-classic" id="card">
+                <div class="editorial-line-top"></div>
+                <div class="editorial-text-top">Wisdom</div>
+                <div id="displayContent"></div>
+                <div class="editorial-line-bottom"></div>
+                <div class="editorial-text-bottom" id="dateDisplay"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast">Saved Successfully</div>
+<canvas id="exportCanvas"></canvas>
+
+<script>
+    const state = { theme: 'cream', layout: 'classic', width: 1080, height: 1440, currentScale: 1.0 };
+    const THEMES = {
+        cream: { bg: '#F5F0E8', text: '#2C2C2C' },
+        midnight: { bg: '#1A1A2E', text: '#E8E8E8' },
+        forest: { bg: '#2D3B2D', text: '#E8EDE8' },
+        ocean: { bg: '#1E3A4C', text: '#E8F0F0' },
+        blush: { bg: '#F8F0F0', text: '#3C2C2C' },
+        mono: { bg: '#FFFFFF', text: '#1A1A1A' }
+    };
+
+    const els = {
+        card: document.getElementById('card'),
+        input: document.getElementById('quoteAll'),
+        display: document.getElementById('displayContent'),
+        date: document.getElementById('dateDisplay'),
+        canvas: document.getElementById('exportCanvas'),
+        exportBtn: document.getElementById('exportBtn'),
+        count: document.getElementById('allCount'),
+        toast: document.getElementById('toast')
+    };
+
+    function init() {
+        els.input.value = `"Be happy and spread joy where you are now."\n\n此刻先快乐，\n也把欢喜散在身边。`;
+        updateDate();
+        renderText();
+        bindEvents();
+    }
+
+    function updateDate() {
+        const d = new Date();
+        els.date.textContent = d.toISOString().split('T')[0].replace(/-/g, '.');
+    }
+
+    function renderText() {
+        const text = els.input.value;
+        const lines = text.split('\n');
+        els.count.textContent = `${text.length}/400`;
+
+        els.display.innerHTML = lines.map(line => {
+            if(!line.trim()) return '<div class="empty-line"></div>';
+            const isZh = /[\u4e00-\u9fff]/.test(line);
+            return `<div class="${isZh ? 'zh-text-display' : 'en-text-display'}">${escapeHtml(line)}</div>`;
+        }).join('');
+        
+        els.display.style.transform = `scale(1)`;
+        const cardHeight = els.card.offsetHeight * 0.7;
+        let scale = 1.0;
+        while (els.display.offsetHeight * scale > cardHeight && scale > 0.4) {
+            scale -= 0.02;
+        }
+        els.display.style.transform = `scale(${scale})`;
+        state.currentScale = scale;
+    }
+
+    function bindEvents() {
+        els.input.addEventListener('input', renderText);
+        const addToggleListener = (selector, datasetKey) => {
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll(selector).forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state[datasetKey] = btn.dataset[datasetKey];
+                    if (datasetKey === 'size') {
+                        state.width = parseInt(btn.dataset.w);
+                        state.height = parseInt(btn.dataset.h);
+                        document.getElementById('cardWrapper').style.aspectRatio = `${state.width}/${state.height}`;
+                    }
+                    els.card.className = `card theme-${state.theme} layout-${state.layout}`;
+                    renderText();
+                };
+            });
+        };
+        addToggleListener('[data-theme]', 'theme');
+        addToggleListener('[data-layout]', 'layout');
+        addToggleListener('[data-size]', 'size');
+        els.exportBtn.onclick = exportImage;
+    }
+
+    function escapeHtml(t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    async function exportImage() {
+        const btn = els.exportBtn;
+        const originalText = btn.innerText;
+        btn.innerText = 'Generating...';
+        await document.fonts.ready;
+
+        const ctx = els.canvas.getContext('2d');
+        els.canvas.width = state.width;
+        els.canvas.height = state.height;
+
+        ctx.fillStyle = THEMES[state.theme].bg;
+        ctx.fillRect(0, 0, state.width, state.height);
+        ctx.fillStyle = THEMES[state.theme].text;
+
+        const padding = state.width * 0.125;
+        const contentWidth = state.width - (padding * 2);
+        
+        const upscaleFactor = state.width / els.card.offsetWidth;
+        const baseEnSize = 24 * upscaleFactor * state.currentScale;
+        const baseZhSize = 18 * upscaleFactor * state.currentScale;
+        
+        const fontEn = `italic ${baseEnSize}px 'Cormorant Garamond', Georgia, serif`;
+        const fontZh = `300 ${baseZhSize}px 'Noto Serif SC', 'PingFang SC', serif`;
+        
+        const rawLines = els.input.value.split('\n');
+        const blocks = [];
+
+        rawLines.forEach(line => {
+            if(!line.trim()) { blocks.push({ type: 'space', h: 24 * upscaleFactor * state.currentScale }); return; }
+            const isZh = /[\u4e00-\u9fff]/.test(line);
+            ctx.font = isZh ? fontZh : fontEn;
+            const words = isZh ? line.split('') : line.split(' ');
+            let currentLine = "";
+            for(let n=0; n<words.length; n++) {
+                let testLine = currentLine + (isZh ? "" : (currentLine ? " " : "")) + words[n];
+                if(ctx.measureText(testLine).width > contentWidth && n > 0) {
+                    blocks.push({ text: currentLine, font: isZh?fontZh:fontEn, isZh });
+                    currentLine = words[n];
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            blocks.push({ text: currentLine, font: isZh?fontZh:fontEn, isZh });
+        });
+
+        const totalH = blocks.reduce((acc, b) => acc + (b.type === 'space' ? b.h : (b.isZh ? baseZhSize * 2.0 : baseEnSize * 1.4)), 0);
+        let currentY = (state.height - totalH) / 2;
+        ctx.textBaseline = 'top';
+
+        blocks.forEach(b => {
+            if(b.type === 'space') { currentY += b.h; return; }
+            ctx.font = b.font;
+            ctx.textAlign = state.layout === 'zen' ? 'center' : 'left';
+            ctx.fillText(b.text, state.layout === 'zen' ? state.width/2 : padding, currentY);
+            currentY += b.isZh ? baseZhSize * 2.0 : baseEnSize * 1.4;
+        });
+
+        if(state.layout === 'editorial') {
+            ctx.globalAlpha = 0.3;
+            ctx.fillRect(padding, state.height * 0.12, contentWidth, 2);
+            ctx.fillRect(padding, state.height * 0.88, contentWidth, 2);
+            ctx.globalAlpha = 0.5;
+            ctx.font = `500 ${10 * upscaleFactor}px Inter`;
+            ctx.textAlign = "left"; ctx.fillText("WISDOM", padding, state.height * 0.08);
+            ctx.textAlign = "right"; ctx.fillText(els.date.textContent, state.width - padding, state.height * 0.9);
+        }
+
+        els.canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.download = `card-${Date.now()}.png`; a.href = url; a.click();
+            btn.innerText = originalText;
+            els.toast.classList.add('show');
+            setTimeout(() => els.toast.classList.remove('show'), 2500);
+        });
+    }
+
+    init();
+</script>
+</body>
+</html>
