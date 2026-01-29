@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Text Card Maker — Turn your thoughts into a gallery of wisdom</title>
+    <title>Text Card Maker V1.4</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -161,10 +161,10 @@
         <div class="card-wrapper" id="cardWrapper">
             <div class="card theme-cream layout-classic" id="card">
                 <div class="editorial-line-top"></div>
-                <div class="editorial-text-top">Wisdom</div>
+                <div class="editorial-text-top" id="wisdomDisplay" contenteditable="true" spellcheck="false" aria-label="Edit title">Wisdom</div>
                 <div id="displayContent"></div>
                 <div class="editorial-line-bottom"></div>
-                <div class="editorial-text-bottom" id="dateDisplay"></div>
+                <div class="editorial-text-bottom" id="dateDisplay" contenteditable="true" spellcheck="false" aria-label="Edit date"></div>
             </div>
         </div>
     </div>
@@ -188,6 +188,7 @@
         card: document.getElementById('card'),
         input: document.getElementById('quoteAll'),
         display: document.getElementById('displayContent'),
+        wisdom: document.getElementById('wisdomDisplay'),
         date: document.getElementById('dateDisplay'),
         canvas: document.getElementById('exportCanvas'),
         exportBtn: document.getElementById('exportBtn'),
@@ -317,7 +318,7 @@
             ctx.fillRect(padding, state.height * 0.88, contentWidth, 2);
             ctx.globalAlpha = 0.5;
             ctx.font = `500 ${10 * upscaleFactor}px Inter`;
-            ctx.textAlign = "left"; ctx.fillText("WISDOM", padding, state.height * 0.08);
+            ctx.textAlign = "left"; ctx.fillText((els.wisdom && els.wisdom.textContent ? els.wisdom.textContent : 'WISDOM').toUpperCase(), padding, state.height * 0.08);
             ctx.textAlign = "right"; ctx.fillText(els.date.textContent, state.width - padding, state.height * 0.9);
         }
 
@@ -334,5 +335,4 @@
     init();
 </script>
 </body>
-
 </html>
